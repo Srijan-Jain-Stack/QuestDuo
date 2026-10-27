@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MoodVerse.exe</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Press Start 2P',monospace;background:#0a0a14;color:#e8ffe8;font-size:11px;line-height:1.9}
+.px{image-rendering:pixelated}
+#crt::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;background:repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 1px,transparent 1px 3px)}
+#crt::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:51;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.55))}
+.btn{border:4px solid #fff;background:#1c1c3a;padding:12px 14px;cursor:pointer;box-shadow:4px 4px 0 #000;font:inherit;color:inherit;text-align:left;display:flex;gap:12px;align-items:center}
+.btn:hover:not(:disabled){background:#ffe600;color:#000;transform:translate(2px,2px);box-shadow:2px 2px 0 #000}.btn:disabled{opacity:.5;cursor:wait}
+.box{border:4px solid #fff;background:rgba(0,0,0,.78);padding:12px}
+input{font:inherit;background:#000;color:#7fff7f;border:3px solid #7fff7f;padding:8px;width:100%}
+.bubble{position:absolute;max-width:42%;background:#fff;color:#000;border:3px solid #000;padding:6px 8px;font-size:9px;line-height:1.6;bottom:190px;z-index:5}
+.bubble::after{content:"";position:absolute;bottom:-10px;width:0;height:0;border:7px solid transparent;border-top-color:#fff}
+#b0::after{left:24px}#b1::after{right:24px}
+.glow{text-shadow:0 0 8px #0f0,0 0 18px #0f0}
+@keyframes blink{50%{opacity:0}}.blink{animation:blink 1s steps(1) infinite}
+.hero{display:inline-block;animation:bob 1.1s steps(2) infinite}
+.hero.talk{animation:bob .3s steps(2) infinite}
+.hero.hop{animation:hop .55s ease-out}
+.hero.flip canvas{transform:scaleX(-1)}
+@keyframes bob{50%{transform:translateY(-5px)}}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-34px)}}
+.spark{position:absolute;bottom:-8px;width:4px;height:4px;background:#fff;opacity:0;animation:drift linear infinite}
+@keyframes drift{0%{transform:translateY(0);opacity:0}15%{opacity:.8}100%{transform:translateY(-340px);opacity:0}}
+.flash{animation:flash .6s steps(6)}@keyframes flash{0%{filter:brightness(3)}100%{filter:brightness(1)}}
+.pop{animation:pop .35s steps(4) both}@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+#ground{background:repeating-linear-gradient(90deg,rgba(0,0,0,.45) 0 8px,rgba(0,0,0,.3) 8px 16px);border-top:4px solid rgba(255,255,255,.35)}
+.plate{font-size:8px;margin-top:4px;background:rgba(0,0,0,.75);padding:3px 5px;display:flex;gap:5px;align-items:center;justify-content:center}
+.plate img{width:22px;height:22px;border:2px solid #fff}
+</style></head>
+<body><div id="crt" class="min-h-screen"><div class="max-w-3xl mx-auto p-3">
+
+<section id="intro" class="screen">
+  <h1 class="text-2xl text-center glow my-6">MOODVERSE<span class="text-yellow-300">.EXE</span></h1>
+  <p class="text-center mb-4 text-[10px]">2 PLAYERS. 2 FACES. 2 SETS OF INTERESTS.<br>ONE ADVENTURE ONLY YOU CAN LIVE.</p>
+  <div class="box mb-3 text-center">
+    <video id="vid" autoplay playsinline muted class="mx-auto w-48 h-48 object-cover border-4 border-white bg-black"></video>
+    <div id="camerr" class="text-red-400 text-[9px] mt-2"></div>
+  </div>
+  <div class="grid md:grid-cols-2 gap-3"><div class="box" id="card0"></div><div class="box" id="card1"></div></div>
+  <div id="err" class="text-red-400 text-center my-3"></div>
+  <div class="text-center"><button class="btn mx-auto" onclick="start()">&gt; PRESS START</button></div>
+</section>
+
+<section id="load" class="screen hidden text-center pt-24">
+  <div id="loadtxt" class="mb-4 blink">LOADING...</div>
+  <div class="border-4 border-white h-8 max-w-md mx-auto"><div id="bar" class="h-full bg-green-400 transition-all" style="width:0"></div></div>
+</section>
+
+<section id="prolog" class="screen hidden pt-10">
+  <div class="text-center text-yellow-300 mb-1">- PROLOGUE -</div>
+  <h2 id="ptitle" class="text-center text-lg glow mb-6"></h2>
+  <div class="flex justify-center gap-16 mb-6"><div id="ph0"></div><div id="ph1"></div></div>
+  <div class="box mb-3"><span id="ptext"></span></div>
+  <div class="box mb-6 border-yellow-300 text-yellow-300 hidden" id="pquestbox">YOUR QUEST:<br><span id="pquest"></span></div>
+  <div class="text-center"><button id="pbtn" class="btn mx-auto hidden" onclick="begin()">&gt; BEGIN</button></div>
+</section>
+
+<section id="game" class="screen hidden">
+  <div class="flex justify-between text-[9px] mb-1"><span id="hud"></span><span id="inv" class="text-yellow-300"></span></div>
+  <div id="quest" class="text-[8px] text-yellow-300 mb-2"></div>
+  <div id="stage" class="relative h-80 border-4 border-white overflow-hidden mb-3">
+    <div id="sparks"></div>
+    <div id="title" class="absolute top-2 left-2 right-2 text-center text-[10px] bg-black/60 p-1 z-10"></div>
+    <div id="b0" class="bubble left-3 hidden"></div><div id="b1" class="bubble right-3 hidden"></div>
+    <div id="av0" class="absolute bottom-7 left-[7%] text-center"><div class="hero" id="h0"></div><div class="plate" id="pl0"></div></div>
+    <div id="av1" class="absolute bottom-7 right-[7%] text-center"><div class="hero flip" id="h1"></div><div class="plate" id="pl1"></div></div>
+    <div id="ground" class="absolute bottom-0 left-0 right-0 h-7"></div>
+  </div>
+  <div class="box mb-3 cursor-pointer" onclick="skip()"><span id="story"></span></div>
+  <div id="clue" class="hidden box mb-3 border-yellow-300 text-yellow-300"></div>
+  <div id="choices" class="grid gap-3"></div>
+  <div id="final" class="hidden box">
+    <div class="mb-2">THE VAULT AWAITS. SPEAK THE KEY:</div>
+    <input id="ans" autocomplete="off" placeholder="TYPE ONE WORD">
+    <div id="ferr" class="text-red-400 my-2"></div>
+    <button class="btn" onclick="submitFinal()">&gt; UNLOCK</button>
+  </div>
+</section>
+
+<section id="end" class="screen hidden text-center pt-16">
+  <h2 id="endtitle" class="text-xl glow mb-6"></h2><p id="endtxt" class="mb-8"></p>
+  <button class="btn mx-auto" onclick="location.reload()">&gt; PLAY AGAIN</button>
+</section>
+
+</div></div>
+<script>
+const $=s=>document.querySelector(s), sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const API=location.protocol==='file:'?'http://localhost:8000':'';
+const j=r=>{if(!r.ok)throw new Error(r.status);return r.json()};
+const post=(u,b)=>fetch(API+u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(j);
+const get=u=>fetch(API+u).then(j);
+const show=id=>{document.querySelectorAll('.screen').forEach(e=>e.classList.add('hidden'));$(id).classList.remove('hidden')};
+const P=[{photo:'',sprite:'',look:null,set:false},{photo:'',sprite:'',look:null,set:false}];
+let sid,names=['P1','P2'],avatars=[],world={},scene,clues=[],busy=false,run=0,skipFn=null;
+const LOOK=[{},{}],SPR=[null,null,null,null,null,null],talking=[false,false];
+const PX=6,GW=16,GH=22,SHIRTS=['#c0392b','#2980b9','#27ae60','#8e44ad','#d35400','#16a085'];
+
+// ---------- intro ----------
+[0,1].forEach(i=>{$('#card'+i).innerHTML=`
+ <div class="text-yellow-300 mb-2">PLAYER ${i+1}</div>
+ <img id="prev${i}" class="px w-24 h-24 border-4 border-white mx-auto mb-2 bg-black" alt="">
+ <button class="btn w-full mb-2" onclick="snap(${i})">&gt; SNAP PHOTO</button>
+ <input id="n${i}" placeholder="NAME" class="mb-2"><input id="i${i}" placeholder="INTERESTS (COMMA SEPARATED)">
+ <div class="text-yellow-300 text-[8px] mt-3">YOUR PIXEL HERO (EDIT ME)</div><div id="pv${i}" class="flex justify-center my-1"></div>
+ <div class="grid grid-cols-2 gap-1 text-[8px] items-center">
+ <select id="hs${i}" onchange="ed(${i})" style="background:#000;color:#7fff7f;border:3px solid #7fff7f;font:inherit;padding:4px"><option>short</option><option>long</option><option>curly</option><option>bald</option></select>
+ <label><input type="checkbox" id="gl${i}" onchange="ed(${i})" style="width:auto"> GLASSES</label>
+ <label><input type="checkbox" id="bd${i}" onchange="ed(${i})" style="width:auto"> BEARD</label><span></span>
+ <label>HAIR<input type="color" id="hc${i}" oninput="ed(${i})" style="padding:0;height:24px"></label>
+ <label>SKIN<input type="color" id="sc${i}" oninput="ed(${i})" style="padding:0;height:24px"></label>
+ <label>SHIRT<input type="color" id="tc${i}" oninput="ed(${i})" style="padding:0;height:24px"></label></div>`});
+(async()=>{try{$('#vid').srcObject=await navigator.mediaDevices.getUserMedia({video:true})}
+ catch(e){$('#camerr').textContent='NO CAMERA - HEROES WILL GET DEFAULT LOOKS'}})();
+
+const defLook=i=>({hair:'short',glasses:false,beard:false,hair_color:'#3b2a20',skin:'#e0ac69',shirt_color:SHIRTS[i*2]});
+const fromLook=l=>({skin:l.skin,hair:l.hair_color,shirt:l.shirt_color,style:l.hair,glasses:l.glasses,beard:l.beard});
+function syncUI(i){const l=P[i].look;$('#hs'+i).value=l.hair;$('#gl'+i).checked=l.glasses;$('#bd'+i).checked=l.beard;
+  $('#hc'+i).value=l.hair_color;$('#sc'+i).value=l.skin;$('#tc'+i).value=l.shirt_color}
+function ed(i){P[i].look={hair:$('#hs'+i).value,glasses:$('#gl'+i).checked,beard:$('#bd'+i).checked,
+  hair_color:$('#hc'+i).value,skin:$('#sc'+i).value,shirt_color:$('#tc'+i).value};P[i].set=true;buildLook(i)}
+[0,1].forEach(i=>{P[i].look=defLook(i);syncUI(i);LOOK[i]=fromLook(P[i].look);
+  const c=mkSprite();c.style.cssText='width:64px;height:88px';SPR[4+i]=c;$('#pv'+i).appendChild(c)});
+const isSkin=(r,g,b)=>r>90&&g>40&&b>20&&r>g&&r>b&&r-Math.min(g,b)>15;
+function pick(ctx,x,y,w,h,ok){const d=ctx.getImageData(x,y,w,h).data;let r=0,g=0,b=0,n=0;
+  for(let k=0;k<d.length;k+=4)if(ok(d[k],d[k+1],d[k+2])){r+=d[k];g+=d[k+1];b+=d[k+2];n++}
+  return n>20?'#'+[r,g,b].map(v=>Math.round(v/n).toString(16).padStart(2,'0')).join(''):null}
+function avg(ctx,x,y,w,h){const d=ctx.getImageData(x,y,w,h).data;let r=0,g=0,b=0;const n=d.length/4;
+  for(let k=0;k<d.length;k+=4){r+=d[k];g+=d[k+1];b+=d[k+2]}
+  return '#'+[r,g,b].map(v=>Math.round(v/n).toString(16).padStart(2,'0')).join('')}
+function lum(hex){const n=parseInt(hex.slice(1),16);return .3*(n>>16)+.59*((n>>8)&255)+.11*(n&255)}
+function snap(i){
+  const v=$('#vid');if(!v.videoWidth)return;
+  const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');
+  const s=Math.min(v.videoWidth,v.videoHeight);
+  ctx.drawImage(v,(v.videoWidth-s)/2,(v.videoHeight-s)/2,s,s,0,0,256,256);
+  P[i].photo=c.toDataURL('image/jpeg',.7).split(',')[1];
+  const L=P[i].look||defLook(i),bgc=avg(ctx,0,0,20,20),far=c2=>c2&&Math.abs(lum(c2)-lum(bgc))>28;
+  const skin=pick(ctx,88,90,80,90,isSkin),hair=pick(ctx,76,4,104,36,(r,g,b)=>!isSkin(r,g,b)),shirt=pick(ctx,64,224,128,32,(r,g,b)=>!isSkin(r,g,b));
+  P[i].look={...L,skin:skin||L.skin,hair_color:far(hair)?hair:L.hair_color,shirt_color:far(shirt)?shirt:L.shirt_color};
+  P[i].set=true;syncUI(i);buildLook(i);
+  const t=document.createElement('canvas');t.width=t.height=24;
+  const y=t.getContext('2d');y.drawImage(c,0,0,24,24);
+  const d=y.getImageData(0,0,24,24);
+  for(let k=0;k<d.data.length;k++)if(k%4<3)d.data[k]=Math.round(d.data[k]/64)*64;
+  y.putImageData(d,0,0);P[i].sprite=t.toDataURL();$('#prev'+i).src=P[i].sprite;
+}
+
+// ---------- pixel heroes ----------
+function shade(hex,f=.7){const n=parseInt(hex.slice(1),16);
+  return '#'+[n>>16,(n>>8)&255,n&255].map(v=>Math.round(v*f).toString(16).padStart(2,'0')).join('')}
+function buildLook(i){
+  if(P[i].set){LOOK[i]=fromLook(P[i].look);return}
+  const a=(avatars[i]&&avatars[i].look)||{};
+  let skin=P[i].skin||a.skin||'#e0ac69';
+  let hair=(P[i].hair&&lum(P[i].hair)<170)?P[i].hair:(a.hair_color||'#3b2a20');
+  if(lum(skin)<70)skin=a.skin||'#c68642';
+  const cls=(avatars[i]&&avatars[i].class)||'';let h=0;for(const ch of cls+i)h=(h*31+ch.charCodeAt(0))%97;
+  LOOK[i]={skin,hair,shirt:a.shirt_color||SHIRTS[h%SHIRTS.length],style:a.hair||'short',glasses:!!a.glasses,beard:!!a.beard};
+}
+function mkSprite(slot){const c=document.createElement('canvas');c.width=GW*PX;c.height=GH*PX;c.className='px';return c}
+function drawHero(slot,i,mouth,blinkNow){
+  const c=SPR[slot];if(!c)return;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);
+  const L=LOOK[i],dark='#1a1a2a',R=(col,row,w,h,color)=>{x.fillStyle=color;x.fillRect(col*PX,row*PX,w*PX,h*PX)};
+  R(5,18,3,3,'#2b2f5a');R(8,18,3,3,'#2b2f5a');R(5,21,3,1,'#111');R(8,21,3,1,'#111');
+  R(4,12,8,6,L.shirt);R(3,12,1,5,shade(L.shirt));R(12,12,1,5,shade(L.shirt));R(3,17,1,1,L.skin);R(12,17,1,1,L.skin);
+  R(7,11,2,1,L.skin);R(4,3,8,8,L.skin);
+  if(L.style!=='bald'){R(4,2,8,2,L.hair);R(4,4,1,1,L.hair);R(11,4,1,1,L.hair);
+    if(L.style==='long'){R(3,4,1,7,L.hair);R(12,4,1,7,L.hair);R(4,5,1,5,L.hair);R(11,5,1,5,L.hair)}
+    if(L.style==='curly'){R(3,1,10,2,L.hair);R(3,3,1,3,L.hair);R(12,3,1,3,L.hair)}}
+  if(L.beard){R(4,9,8,2,L.hair);R(5,11,6,1,L.hair)}
+  if(blinkNow){R(6,7,1,1,dark);R(9,7,1,1,dark)}else{R(6,6,1,2,dark);R(9,6,1,2,dark)}
+  if(L.glasses){R(5,5,3,1,dark);R(5,8,3,1,dark);R(5,6,1,2,dark);R(7,6,1,2,dark);R(8,5,3,1,dark);R(8,8,3,1,dark);R(8,6,1,2,dark);R(10,6,1,2,dark)}
+  if(mouth)R(7,9,2,2,'#5a1010');else R(7,9,2,1,'#7a2a2a');
+}
+function mountHero(slot,i,hostId){
+  buildLook(i);const host=$(hostId);host.innerHTML='';
+  SPR[slot]=mkSprite(slot);host.appendChild(SPR[slot]);drawHero(slot,i,false,false);
+}
+let tick=0;
+setInterval(()=>{tick++;
+  [[0,0],[1,1]].forEach(([slot,i])=>{if(!SPR[slot])return;drawHero(slot,i,talking[i]&&tick%2===0,tick%22===i*9)});
+  [[2,0],[3,1],[4,0],[5,1]].forEach(([slot,i])=>{if(SPR[slot])drawHero(slot,i,false,tick%22===i*9)});
+},170);
+function setPlate(i){
+  const el=$('#pl'+i);el.innerHTML='';
+  if(P[i].sprite){const im=document.createElement('img');im.src=P[i].sprite;im.className='px';el.appendChild(im)}
+  const t=document.createElement('span');t.textContent=names[i]+' - '+(((avatars[i]||{}).class)||'Hero');el.appendChild(t);
+}
+function makeSparks(){const box=$('#sparks');box.innerHTML='';
+  for(let k=0;k<22;k++){const d=document.createElement('div');d.className='spark';
+    d.style.left=Math.random()*100+'%';d.style.animationDuration=(4+Math.random()*5)+'s';d.style.animationDelay=(-Math.random()*8)+'s';box.appendChild(d)}}
+
+// ---------- flow ----------
+async function start(){
+  const players=[0,1].map(i=>({name:$('#n'+i).value.trim()||'PLAYER '+(i+1),
+    interests:$('#i'+i).value.split(',').map(s=>s.trim()).filter(Boolean),photo_b64:P[i].photo,look:P[i].set?P[i].look:{}}));
+  if(players.some(p=>!p.interests.length)){$('#err').textContent='ENTER AT LEAST ONE INTEREST EACH!';return}
+  names=players.map(p=>p.name);show('#load');
+  try{
+    sid=(await post('/api/start',{players})).session_id;let pct=5;
+    for(;;){
+      const s=await get('/api/status/'+sid);pct=Math.min(95,pct+6);$('#bar').style.width=pct+'%';
+      $('#loadtxt').textContent=s.avatars_ready?'BUILDING YOUR WORLD...':'READING YOUR FACES...';
+      if(s.avatars_ready){avatars=s.avatars;world=s.world||{}}
+      if(s.scene_ready)break;await sleep(700);
+    }
+    $('#bar').style.width='100%';scene=await get('/api/scene/'+sid);prologue();
+  }catch(e){show('#intro');$('#err').textContent='SERVER ERROR: '+e.message}
+}
+function typeInto(el,text,speed,done,id){
+  let i=0;el.textContent='';
+  const iv=setInterval(()=>{if(id!==run){clearInterval(iv);return}
+    el.textContent=text.slice(0,++i);if(i>=text.length){clearInterval(iv);skipFn=null;done()}},speed);
+  skipFn=()=>{clearInterval(iv);el.textContent=text;skipFn=null;done()};
+}
+function skip(){if(skipFn)skipFn()}
+function prologue(){
+  show('#prolog');const id=++run;
+  $('#ptitle').textContent=(world.title||'THE ADVENTURE').toUpperCase();
+  $('#pquestbox').classList.add('hidden');$('#pbtn').classList.add('hidden');
+  mountHero(2,0,'#ph0');mountHero(3,1,'#ph1');
+  typeInto($('#ptext'),world.premise||'Two friends step through a glowing door.',24,()=>{
+    $('#pquest').textContent=world.quest||'Find the hidden treasure.';
+    $('#pquestbox').classList.remove('hidden');$('#pquestbox').classList.add('pop');
+    $('#pbtn').classList.remove('hidden');$('#pbtn').classList.add('pop')},id);
+  $('#ptext').parentElement.onclick=skip;
+}
+function begin(){SPR[2]=SPR[3]=null;makeSparks();render()}
+
+function bg(sc){
+  if(sc.background_url)return `url(${sc.background_url}) center/cover`;
+  let h=0;for(const ch of (sc.background_fallback_tag||'')+sc.scene_title)h=(h*31+ch.charCodeAt(0))%360;
+  return `linear-gradient(180deg,hsl(${h},55%,14%),hsl(${(h+70)%360},65%,32%))`;
+}
+function render(){
+  const sc=scene;show('#game');busy=false;const id=++run;talking[0]=talking[1]=false;
+  if(sc.clue_found&&!clues.includes(sc.clue_found.name))clues.push(sc.clue_found.name);
+  const st=$('#stage');st.style.background=bg(sc);st.classList.remove('flash');void st.offsetWidth;st.classList.add('flash');
+  $('#title').textContent=sc.scene_title.toUpperCase();
+  $('#hud').textContent=`SCENE ${sc.scene_number}/${sc.max_scenes}  HP ${sc.game_state_update.health}`;
+  $('#inv').textContent='CLUES: '+clues.length;$('#quest').textContent='QUEST: '+(world.quest||'');
+  mountHero(0,0,'#h0');mountHero(1,1,'#h1');setPlate(0);setPlate(1);
+  ['#b0','#b1'].forEach(b=>$(b).classList.add('hidden'));
+  $('#choices').innerHTML='';$('#final').classList.add('hidden');$('#clue').classList.add('hidden');
+  const lines=(sc.character_dialogue||[]).slice(0,2);
+  const speak=k=>{
+    if(id!==run)return;
+    if(k>=lines.length){afterTalk(sc);return}
+    const i=lines[k].speaker===names[1]?1:lines[k].speaker===names[0]?0:k%2;
+    const b=$('#b'+i);b.classList.remove('hidden');talking[i]=true;$('#h'+i).classList.add('talk');
+    typeInto(b,lines[k].text,24,()=>{talking[i]=false;$('#h'+i).classList.remove('talk');setTimeout(()=>speak(k+1),450)},id);
+  };
+  typeInto($('#story'),sc.story_text,17,()=>speak(0),id);
+}
+function afterTalk(sc){
+  if(sc.clue_found){$('#clue').classList.remove('hidden');$('#clue').classList.add('pop');
+    $('#clue').textContent='CLUE FOUND: '+sc.clue_found.name+' - '+sc.clue_found.description}
+  if(!sc.choices.length){$('#final').classList.remove('hidden');return}
+  sc.choices.forEach((c,k)=>{
+    const b=document.createElement('button');b.className='btn pop';b.style.animationDelay=(k*.15)+'s';
+    if(P[k].sprite){const im=document.createElement('img');im.src=P[k].sprite;im.className='px';im.style.cssText='width:28px;height:28px;border:2px solid #fff;flex:none';b.appendChild(im)}
+    const t=document.createElement('span');t.textContent=c.description;b.appendChild(t);
+    b.onclick=()=>choose(c.choice_id);$('#choices').appendChild(b);
+  });
+}
+async function choose(cid){
+  if(busy)return;busy=true;
+  document.querySelectorAll('#choices .btn').forEach(b=>b.disabled=true);
+  ['#h0','#h1'].forEach(h=>{$(h).classList.remove('talk');$(h).classList.add('hop')});
+  $('#story').textContent='THE HEROES MOVE ON...';
+  try{scene=await post('/api/choice',{session_id:sid,choice_id:cid});['#h0','#h1'].forEach(h=>$(h).classList.remove('hop'));render()}
+  catch(e){busy=false;$('#story').textContent='ERROR: '+e.message+' - TRY AGAIN';
+    document.querySelectorAll('#choices .btn').forEach(b=>b.disabled=false)}
+}
+async function submitFinal(){
+  try{
+    const r=await post('/api/validate-final-treasure',{session_id:sid,answer:$('#ans').value});
+    if(r.victory)end('VICTORY!','THE VAULT OPENS. TWO FRIENDS, TWO SETS OF INTERESTS, ONE TREASURE.');
+    else if(r.game_over)end('GAME OVER','THE VAULT STAYS SEALED. BETTER LUCK NEXT TIME.');
+    else $('#ferr').textContent='WRONG KEY. ATTEMPTS LEFT: '+r.attempts_left;
+  }catch(e){$('#ferr').textContent='ERROR: '+e.message}
+}
+function end(t,x){show('#end');$('#endtitle').textContent=t;$('#endtxt').textContent=x}
+</script></body></html>
